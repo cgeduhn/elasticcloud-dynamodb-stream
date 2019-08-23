@@ -25,14 +25,15 @@ exports.pushStream = async (
     host,
     index,
     refresh = false,
-    transformFunction = undefined
+    transformFunction = undefined,
+    options = {}
   } = {}) => {
   validateString(index, 'index')
   validateString(index, 'host')
   validateBoolean(refresh, 'refresh')
   validateFunctionOrUndefined(transformFunction, 'transformFunction')
   
-  const es = new Client({ node: host })
+  const es = new Client({ node: host, ...options })
 
     //   const es = elastic(endpoint, testMode, elasticSearchOptions)
   for (const record of event.Records) {

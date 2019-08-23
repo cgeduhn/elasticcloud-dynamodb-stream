@@ -16,7 +16,7 @@ Whenever data is changed (modified, removed or inserted) in DynamoDB one can use
 
 Install:
 ```javascript
-npm i dynamodb-stream-elasticsearch 
+npm install --save elasticcloud-dynamodb-stream 
 ```
 Use it in your lambda:
 ```javascript
@@ -58,7 +58,7 @@ module.exports.toElastic = async (event, context) => {
 | index  | The name of ElasticSearch index (string). If not provided will set the same as DynamoDB table name | optional
 | refresh  | Force ElasticSearch refresh its index immediately [more here](https://www.elastic.co/guide/en/elasticsearch/reference/current/docs-refresh.html) (boolean). Default: true | optional
 | transformFunction  | A function/promise to transform each record before sending them to ES. Applies to INSERT and UPDATE operations | optional
-
+| options  | Additional set of arguments passed to elasticsearch Client see [here](https://www.elastic.co/guide/en/elasticsearch/client/javascript-api/16.x/configuration.html#config-options) | optional
 ## Authors & Contributors
 
 * [cgeduhn](https://github.com/cgeduhn)
