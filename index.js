@@ -47,7 +47,27 @@ exports.pushStream = async (
             await es.delete({ index, id, refresh })
           }
         } catch (e) {
-          throw new Error(e)
+          
+          if (e.meta && e.meta.statusCode == 404) {
+            console.log("Error Removing Object",e)
+
+            if (Object.values(keys).length > 1) {
+              
+              const other_id = Object.values(keys).reverse().reduce((acc, curr) => acc.concat(curr), '')
+              console.log("TRY OTHER ID", other_id)
+              try {
+                if (await es.exists({ index, id: other_id, refresh })) {
+                  await es.delete({ index, id: other_id, refresh })
+                }
+              } catch(err) {
+                console.log("DID NOT FOUND OTHER ID")
+              }
+            }
+
+          } else {
+            console.log(e.meta)
+            throw new Error(e)
+          }
         }
         break
       }
@@ -61,6 +81,7 @@ exports.pushStream = async (
         try {
           await es.index({ index, id, body, refresh })
         } catch (e) {
+          console.log(e)
           throw new Error(e)
         }
         break

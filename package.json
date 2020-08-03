@@ -1,6 +1,6 @@
 {
   "name": "elasticcloud-dynamodb-stream",
-  "version": "1.1.1",
+  "version": "1.1.9",
   "description": "Dynamodbstream for the Elasticcloud service for Elasticsearch >=7.2",
   "main": "index.js",
   "scripts": {
