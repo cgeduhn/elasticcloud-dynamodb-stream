@@ -13,9 +13,10 @@
   "license": "ISC",
   "dependencies": {
     "@elastic/elasticsearch": "^7.3.0",
+    "aws-lambda": "^1.0.7",
     "aws-sdk": "^2.1174.0",
-    "typescript": "^4.7.4",
-    "aws-lambda": "^1.0.7"
+    "lodash.flatmap": "^4.5.0",
+    "typescript": "^4.7.4"
   },
   "devDependencies": {
     "@shelf/jest-elasticsearch": "^2.1.0",
