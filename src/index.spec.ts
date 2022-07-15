@@ -179,4 +179,40 @@ describe('Testing Stream Events', () => {
 
     expect(result.body.hits.total.value).toEqual(1);
   });
+
+  it('can upload same object twice takes last value', async () => {
+    let first_value = `${Math.random()}`;
+    let second_value = `0.0`;
+    // delete again
+    const ev2: DynamoDBStreamEvent = {
+      Records: [
+        buildStreamRecord({ type: 'duplicated', id: '1', random_val: first_value }, 'INSERT'),
+        buildStreamRecord({ type: 'duplicated', id: '1', random_val: second_value }, 'INSERT'),
+      ],
+    };
+
+    await pushStream({
+      ...partialArgs,
+      event: ev2,
+      refresh: true,
+      useBulk: true,
+    });
+
+    let result = await es.search({
+      track_total_hits: true,
+      body: {
+        query: {
+          bool: {
+            filter: [{ term: { type: 'duplicated' } }],
+          },
+        },
+      },
+      index: partialArgs.index,
+    });
+    expect(result.body.hits.total.value).toEqual(1);
+
+    expect(result.body.hits.hits[0]._source.type).toEqual('duplicated');
+    expect(result.body.hits.hits[0]._source.id).toEqual('1');
+    expect(result.body.hits.hits[0]._source.random_val).toEqual(second_value);
+  });
 });
