@@ -1,9 +1,13 @@
+import { marshall } from '@aws-sdk/util-dynamodb';
 import { Client } from '@elastic/elasticsearch';
 import { DynamoDBStreamEvent } from 'aws-lambda';
-import * as AWS from 'aws-sdk';
-import { pushStream, PushStreamArgs } from '.';
+import { PushStreamArgs, pushStream } from '.';
 
-const buildStreamRecord = (obj, eventName = 'INSERT', reverse_key_order = false) => {
+const buildStreamRecord = (
+  obj,
+  eventName: 'INSERT' | 'MODIFY' | 'REMOVE' = 'INSERT',
+  reverse_key_order = false,
+) => {
   let Keys = { id: { S: obj.id }, type: { S: obj.type } };
   if (reverse_key_order) {
     Keys = { type: { S: obj.type }, id: { S: obj.id } };
@@ -12,7 +16,7 @@ const buildStreamRecord = (obj, eventName = 'INSERT', reverse_key_order = false)
   return {
     eventName,
     dynamodb: {
-      NewImage: AWS.DynamoDB.Converter.marshall(obj) as any,
+      NewImage: marshall(obj) as any,
       Keys,
     },
   };

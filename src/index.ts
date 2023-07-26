@@ -1,9 +1,10 @@
 import { Client, ClientOptions } from '@elastic/elasticsearch';
 import { DynamoDBStreamEvent } from 'aws-lambda';
-import * as AWS from 'aws-sdk';
+
+import { unmarshall } from '@aws-sdk/util-dynamodb';
 import * as flatMap from 'lodash.flatmap';
 
-const converter = AWS.DynamoDB.Converter.unmarshall;
+const converter = unmarshall;
 
 const removeEventData = (body) => {
   delete body.SequenceNumber;
@@ -78,7 +79,7 @@ export const pushStream = async ({
   const toUpsert = [];
 
   for (const record of event.Records) {
-    const keys = converter(record.dynamodb.Keys);
+    const keys = converter(record.dynamodb.Keys as any);
     let vals = Object.values(keys);
     const id = vals.reduce((acc, curr) => acc.concat(curr), '');
     const reversed_id = vals.reverse().reduce((acc, curr) => acc.concat(curr), '');
@@ -92,8 +93,10 @@ export const pushStream = async ({
       }
       case 'MODIFY':
       case 'INSERT': {
-        let body = converter(record.dynamodb.NewImage);
-        const oldBody = record.dynamodb.OldImage ? converter(record.dynamodb.OldImage) : undefined;
+        let body = converter(record.dynamodb.NewImage as any);
+        const oldBody = record.dynamodb.OldImage
+          ? converter(record.dynamodb.OldImage as any)
+          : undefined;
         body = removeEventData(body);
         if (transformFunction) {
           body = await Promise.resolve(transformFunction(body, oldBody, record));
