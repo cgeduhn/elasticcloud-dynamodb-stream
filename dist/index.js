@@ -2,9 +2,9 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.pushStream = void 0;
 const elasticsearch_1 = require("@elastic/elasticsearch");
-const AWS = require("aws-sdk");
+const util_dynamodb_1 = require("@aws-sdk/util-dynamodb");
 const flatMap = require("lodash.flatmap");
-const converter = AWS.DynamoDB.Converter.unmarshall;
+const converter = util_dynamodb_1.unmarshall;
 const removeEventData = (body) => {
     delete body.SequenceNumber;
     delete body.SizeBytes;
@@ -63,7 +63,9 @@ const pushStream = async ({ event, host, index, refresh = false, transformFuncti
             case 'MODIFY':
             case 'INSERT': {
                 let body = converter(record.dynamodb.NewImage);
-                const oldBody = record.dynamodb.OldImage ? converter(record.dynamodb.OldImage) : undefined;
+                const oldBody = record.dynamodb.OldImage
+                    ? converter(record.dynamodb.OldImage)
+                    : undefined;
                 body = removeEventData(body);
                 if (transformFunction) {
                     body = await Promise.resolve(transformFunction(body, oldBody, record));
