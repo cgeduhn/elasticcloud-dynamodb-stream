@@ -23,6 +23,10 @@ const validateFunctionOrUndefined = (param, paramName) => {
     if (!(typeof param === 'undefined' || typeof param === 'function'))
         throw new Error(`Please provide correct value for ${paramName}`);
 };
+const validateArrayOfStrings = (param, paramName) => {
+    if (!Array.isArray(param) || !param.every((v) => typeof v === 'string'))
+        throw new Error(`Please provide correct value for ${paramName}`);
+};
 const handleBulkResponseErrors = (bulkResponse, body) => {
     if (bulkResponse.errors) {
         const erroredDocuments = [];
@@ -41,35 +45,55 @@ const handleBulkResponseErrors = (bulkResponse, body) => {
         throw new Error(erroredDocuments.map((obj) => obj.error.reason).join(','));
     }
 };
-const pushStream = async ({ event, host, index, refresh = false, transformFunction = undefined, useBulk = true, options = {}, }) => {
+const pushStream = async ({ event, host, index, id_fields, refresh = false, transformFunction = undefined, useBulk = true, options = {}, }) => {
     validateString(index, 'index');
     validateString(index, 'host');
     validateBoolean(refresh, 'refresh');
+    validateArrayOfStrings(id_fields, 'id_fields');
     validateFunctionOrUndefined(transformFunction, 'transformFunction');
     const es = new elasticsearch_1.Client(Object.assign({ node: host }, options));
     const toRemove = [];
     const toUpsert = [];
     for (const record of event.Records) {
-        const keys = converter(record.dynamodb.Keys);
-        let vals = Object.values(keys);
-        const id = vals.reduce((acc, curr) => acc.concat(curr), '');
-        const reversed_id = vals.reverse().reduce((acc, curr) => acc.concat(curr), '');
+        let body;
+        const oldBody = record.dynamodb.OldImage
+            ? converter(record.dynamodb.OldImage)
+            : undefined;
+        if (record.eventName == 'REMOVE') {
+            body = oldBody;
+        }
+        else {
+            body = converter(record.dynamodb.NewImage);
+            body = removeEventData(body);
+            if (transformFunction) {
+                body = await Promise.resolve(transformFunction(body, oldBody, record));
+            }
+        }
+        let id = '';
+        let reversed_id = '';
+        id_fields.forEach((field) => {
+            if (!body[field]) {
+                throw new Error(`id_field: ${field} not present on the item ${JSON.stringify(body)}`);
+            }
+            id += body[field];
+        });
         switch (record.eventName) {
             case 'REMOVE': {
                 toRemove.push({ index, id, refresh });
+                id_fields
+                    .slice()
+                    .reverse()
+                    .forEach((field) => {
+                    if (!body[field]) {
+                        throw new Error(`id_field: ${field} not present on the item ${JSON.stringify(body)}`);
+                    }
+                    reversed_id += body[field];
+                });
                 toRemove.push({ index, id: reversed_id, refresh });
                 break;
             }
             case 'MODIFY':
             case 'INSERT': {
-                let body = converter(record.dynamodb.NewImage);
-                const oldBody = record.dynamodb.OldImage
-                    ? converter(record.dynamodb.OldImage)
-                    : undefined;
-                body = removeEventData(body);
-                if (transformFunction) {
-                    body = await Promise.resolve(transformFunction(body, oldBody, record));
-                }
                 try {
                     if (body && Object.keys(body).length !== 0 && body.constructor === Object) {
                         toUpsert.push({ index, id, body, refresh });

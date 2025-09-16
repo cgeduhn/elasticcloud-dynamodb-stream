@@ -4,6 +4,7 @@ export interface PushStreamArgs {
     event: DynamoDBStreamEvent;
     host: string;
     index: string;
+    id_fields: string[];
     refresh?: boolean;
     useBulk?: boolean;
     transformFunction?: (body: {
@@ -15,4 +16,4 @@ export interface PushStreamArgs {
     };
     options?: ClientOptions;
 }
-export declare const pushStream: ({ event, host, index, refresh, transformFunction, useBulk, options, }: PushStreamArgs) => Promise<void>;
+export declare const pushStream: ({ event, host, index, id_fields, refresh, transformFunction, useBulk, options, }: PushStreamArgs) => Promise<void>;

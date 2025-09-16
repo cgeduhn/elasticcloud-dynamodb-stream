@@ -130,19 +130,21 @@ export const pushStream = async ({
       }
       id += body[field];
     });
-    id_fields
-      .slice()
-      .reverse()
-      .forEach((field) => {
-        if (!body[field]) {
-          throw new Error(`id_field: ${field} not present on the item ${JSON.stringify(body)}`);
-        }
-        reversed_id += body[field];
-      });
 
     switch (record.eventName) {
       case 'REMOVE': {
         toRemove.push({ index, id, refresh });
+
+        id_fields
+          .slice()
+          .reverse()
+          .forEach((field) => {
+            if (!body[field]) {
+              throw new Error(`id_field: ${field} not present on the item ${JSON.stringify(body)}`);
+            }
+            reversed_id += body[field];
+          });
+
         // sometimes the keys are in reversed order ... so your have to delete both at remove
         toRemove.push({ index, id: reversed_id, refresh });
         break;
