@@ -5,8 +5,8 @@
   "editor.defaultFormatter": "esbenp.prettier-vscode",
   "[typescript]": {
     "editor.codeActionsOnSave": {
-      "source.sortImports": true,
-      "source.organizeImports": true
+      "source.sortImports": "explicit",
+      "source.organizeImports": "explicit"
     }
   }
 }

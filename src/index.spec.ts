@@ -17,6 +17,7 @@ const buildStreamRecord = (
     eventName,
     dynamodb: {
       NewImage: marshall(obj) as any,
+      OldImage: eventName == 'REMOVE' ? (marshall(obj) as any) : undefined,
       Keys,
     },
   };
@@ -26,6 +27,7 @@ let partialArgs: PushStreamArgs = {
   event: { Records: [] },
   host: 'http://localhost:9200',
   index: process.env.INDEX,
+  id_fields: ['id', 'type'],
 };
 
 describe('Testing Stream Events', () => {
@@ -213,6 +215,8 @@ describe('Testing Stream Events', () => {
       },
       index: partialArgs.index,
     });
+
+    //console.log('result', JSON.stringify(result.body, null, 2));
     expect(result.body.hits.total.value).toEqual(1);
 
     expect(result.body.hits.hits[0]._source.type).toEqual('duplicated');

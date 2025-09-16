@@ -26,6 +26,11 @@ const validateFunctionOrUndefined = (param, paramName) => {
     throw new Error(`Please provide correct value for ${paramName}`);
 };
 
+const validateArrayOfStrings = (param, paramName) => {
+  if (!Array.isArray(param) || !param.every((v) => typeof v === 'string'))
+    throw new Error(`Please provide correct value for ${paramName}`);
+};
+
 const handleBulkResponseErrors = (bulkResponse, body) => {
   if (bulkResponse.errors) {
     const erroredDocuments = [];
@@ -47,8 +52,24 @@ const handleBulkResponseErrors = (bulkResponse, body) => {
 
 export interface PushStreamArgs {
   event: DynamoDBStreamEvent;
+  /**
+   * The Elasticsearch host (with port if needed, e.g. http://localhost:9200)
+   */
   host: string;
+  /**
+   * The Elasticsearch index to use (you must create it beforehand if it doesn't exist)
+   */
   index: string;
+
+  /**
+   * The fields to use as the document ID e.g ['tenant_id', 'id']. The order is important.
+   * The id will be calculated after transforming the object (if a transform function is provided)
+   */
+  id_fields: string[];
+
+  /**
+   * Should the index be refreshed after every insert/update/delete operation (default: false)
+   */
   refresh?: boolean;
   useBulk?: boolean;
   transformFunction?: (
@@ -59,10 +80,15 @@ export interface PushStreamArgs {
   options?: ClientOptions;
 }
 
+/**
+ *
+ * @param param0
+ */
 export const pushStream = async ({
   event,
   host,
   index,
+  id_fields,
   refresh = false,
   transformFunction = undefined,
   useBulk = true,
@@ -71,6 +97,7 @@ export const pushStream = async ({
   validateString(index, 'index');
   validateString(index, 'host');
   validateBoolean(refresh, 'refresh');
+  validateArrayOfStrings(id_fields, 'id_fields');
   validateFunctionOrUndefined(transformFunction, 'transformFunction');
 
   const es = new Client({ node: host, ...options });
@@ -79,10 +106,39 @@ export const pushStream = async ({
   const toUpsert = [];
 
   for (const record of event.Records) {
-    const keys = converter(record.dynamodb.Keys as any);
-    let vals = Object.values(keys);
-    const id = vals.reduce((acc, curr) => acc.concat(curr), '');
-    const reversed_id = vals.reverse().reduce((acc, curr) => acc.concat(curr), '');
+    let body: any;
+
+    const oldBody = record.dynamodb.OldImage
+      ? converter(record.dynamodb.OldImage as any)
+      : undefined;
+
+    if (record.eventName == 'REMOVE') {
+      body = oldBody;
+    } else {
+      body = converter(record.dynamodb.NewImage as any);
+      body = removeEventData(body);
+      if (transformFunction) {
+        body = await Promise.resolve(transformFunction(body, oldBody, record));
+      }
+    }
+    let id: string = '';
+    let reversed_id: string = '';
+
+    id_fields.forEach((field) => {
+      if (!body[field]) {
+        throw new Error(`id_field: ${field} not present on the item ${JSON.stringify(body)}`);
+      }
+      id += body[field];
+    });
+    id_fields
+      .slice()
+      .reverse()
+      .forEach((field) => {
+        if (!body[field]) {
+          throw new Error(`id_field: ${field} not present on the item ${JSON.stringify(body)}`);
+        }
+        reversed_id += body[field];
+      });
 
     switch (record.eventName) {
       case 'REMOVE': {
@@ -93,14 +149,6 @@ export const pushStream = async ({
       }
       case 'MODIFY':
       case 'INSERT': {
-        let body = converter(record.dynamodb.NewImage as any);
-        const oldBody = record.dynamodb.OldImage
-          ? converter(record.dynamodb.OldImage as any)
-          : undefined;
-        body = removeEventData(body);
-        if (transformFunction) {
-          body = await Promise.resolve(transformFunction(body, oldBody, record));
-        }
         try {
           if (body && Object.keys(body).length !== 0 && body.constructor === Object) {
             toUpsert.push({ index, id, body, refresh });
