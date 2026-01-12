@@ -5,8 +5,8 @@ module.exports = () => {
   return {
     esVersion: '8.4.0', // ! must be exact version. Ref: https://github.com/elastic/elasticsearch-js .
     // don't be shy to fork our code and update deps to correct.
-    clusterName: 'your-cluster-name-2',
-    nodeName: 'your-node-name-3',
+    clusterName: 'your-cluster-name-8.4.0',
+    nodeName: 'your-node-name-8.4.0',
     port: 9200,
     indexes: [
       {
