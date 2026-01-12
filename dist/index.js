@@ -114,9 +114,9 @@ const pushStream = async ({ event, host, index, id_fields, refresh = false, tran
                 { index: { _index: doc.index, _id: doc.id } },
                 doc.body,
             ]);
-            const { body: bulkResponse } = await es.bulk({
+            const bulkResponse = await es.bulk({
                 refresh: toUpsert[0].refresh,
-                body: updateBody,
+                operations: updateBody,
             });
             if (bulkResponse.errors) {
                 handleBulkResponseErrors(bulkResponse, updateBody);
@@ -134,9 +134,9 @@ const pushStream = async ({ event, host, index, id_fields, refresh = false, tran
             const bodyDelete = flatMap(toRemove, (doc) => [
                 { delete: { _index: doc.index, _id: doc.id } },
             ]);
-            const { body: bulkResponse } = await es.bulk({
+            const bulkResponse = await es.bulk({
                 refresh: toRemove[0].refresh,
-                body: bodyDelete,
+                operations: bodyDelete,
             });
             if (bulkResponse.errors) {
                 handleBulkResponseErrors(bulkResponse, bodyDelete);
@@ -145,7 +145,7 @@ const pushStream = async ({ event, host, index, id_fields, refresh = false, tran
         else {
             for (const doc of toRemove) {
                 const { index, id, refresh } = doc;
-                const { body: exists } = await es.exists({ index, id, refresh });
+                const exists = await es.exists({ index, id, refresh });
                 if (exists) {
                     await es.delete({ index, id, refresh });
                 }

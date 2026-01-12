@@ -4,7 +4,9 @@
     Basically a fork of https://github.com/matrus2/dynamodb-stream-elasticsearch
 ```
 
-# Works only with the standard Elasticsearch >= 7.2
+# Works only with the standard Elasticsearch >= 8.4
+
+# REQUIRES Elasticsearch 8.4 or higher due
 
 # DynamoDB --> Stream --> ElasticSearch
 
