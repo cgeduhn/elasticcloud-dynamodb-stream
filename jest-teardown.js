@@ -1,5 +1,6 @@
-const jest_es = require('@shelf/jest-elasticsearch/teardown');
+const jest_es = require('@shelf/jest-elasticsearch/lib/teardown');
 
 module.exports = async function (jestArgs) {
   await jest_es(jestArgs);
+  process.exit(0);
 };
