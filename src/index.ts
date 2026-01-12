@@ -100,7 +100,10 @@ export const pushStream = async ({
   validateArrayOfStrings(id_fields, 'id_fields');
   validateFunctionOrUndefined(transformFunction, 'transformFunction');
 
-  const es = new Client({ node: host, ...options });
+  const es = new Client({
+    node: host,
+    ...options,
+  });
 
   const toRemove = [];
   const toUpsert = [];
@@ -172,9 +175,9 @@ export const pushStream = async ({
         doc.body,
       ]);
 
-      const { body: bulkResponse } = await es.bulk({
+      const bulkResponse = await es.bulk({
         refresh: toUpsert[0].refresh,
-        body: updateBody,
+        operations: updateBody,
       });
       if (bulkResponse.errors) {
         handleBulkResponseErrors(bulkResponse, updateBody);
@@ -192,9 +195,9 @@ export const pushStream = async ({
       const bodyDelete = flatMap(toRemove, (doc) => [
         { delete: { _index: doc.index, _id: doc.id } },
       ]);
-      const { body: bulkResponse } = await es.bulk({
+      const bulkResponse = await es.bulk({
         refresh: toRemove[0].refresh,
-        body: bodyDelete,
+        operations: bodyDelete,
       });
       if (bulkResponse.errors) {
         handleBulkResponseErrors(bulkResponse, bodyDelete);
@@ -202,7 +205,7 @@ export const pushStream = async ({
     } else {
       for (const doc of toRemove) {
         const { index, id, refresh } = doc;
-        const { body: exists } = await es.exists({ index, id, refresh });
+        const exists = await es.exists({ index, id, refresh });
         if (exists) {
           await es.delete({ index, id, refresh });
         }

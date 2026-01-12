@@ -56,10 +56,10 @@ describe('Testing Stream Events', () => {
       index: partialArgs.index,
     });
 
-    expect(result.body.hits.total.value).toEqual(1);
-    expect(result.body.hits.hits).toBeDefined();
-    expect(result.body.hits.hits.length).toEqual(1);
-    expect(result.body.hits.hits[0]._source).toMatchObject(obj);
+    expect((result.hits.total as any).value).toEqual(1);
+    expect(result.hits.hits).toBeDefined();
+    expect(result.hits.hits.length).toEqual(1);
+    expect(result.hits.hits[0]._source).toMatchObject(obj);
 
     const ev2: DynamoDBStreamEvent = {
       Records: [buildStreamRecord(obj, 'REMOVE')],
@@ -78,7 +78,7 @@ describe('Testing Stream Events', () => {
       index: partialArgs.index,
     });
 
-    expect(result.body.hits.total.value).toEqual(0);
+    expect((result.hits.total as any).value).toEqual(0);
   });
 
   it('should index Modify and transform', async () => {
@@ -110,11 +110,12 @@ describe('Testing Stream Events', () => {
       index: partialArgs.index,
     });
 
-    expect(result.body.hits.total.value).toEqual(1);
-    expect(result.body.hits.hits).toBeDefined();
-    expect(result.body.hits.hits.length).toEqual(1);
-    expect(result.body.hits.hits[0]._source.transformed).toEqual(true);
-    expect(result.body.hits.hits[0]._source).toMatchObject(obj);
+    expect((result.hits.total as any).value).toEqual(1);
+    expect(result.hits.hits).toBeDefined();
+    expect(result.hits.hits.length).toEqual(1);
+    let source = result.hits.hits[0]._source as any;
+    expect(source.transformed).toEqual(true);
+    expect(source).toMatchObject(obj);
   });
 
   it('should handle multiple Records', async () => {
@@ -145,12 +146,13 @@ describe('Testing Stream Events', () => {
       index: partialArgs.index,
     });
 
-    expect(result.body.hits.total.value).toEqual(3);
+    expect((result.hits.total as any).value).toEqual(3);
 
-    for (const hit of result.body.hits.hits) {
-      expect(hit._source.type).toEqual('multiple');
-      expect(hit._source.id).toBeDefined();
-      expect(hit._source.random_val).toBeDefined();
+    for (const hit of result.hits.hits) {
+      let source = hit._source as any;
+      expect(source.type).toEqual('multiple');
+      expect(source.id).toBeDefined();
+      expect(source.random_val).toBeDefined();
     }
 
     // delete again
@@ -183,7 +185,7 @@ describe('Testing Stream Events', () => {
       index: partialArgs.index,
     });
 
-    expect(result.body.hits.total.value).toEqual(1);
+    expect((result.hits.total as any).value).toEqual(1);
   });
 
   it('can upload same object twice takes last value', async () => {
@@ -216,11 +218,14 @@ describe('Testing Stream Events', () => {
       index: partialArgs.index,
     });
 
-    //console.log('result', JSON.stringify(result.body, null, 2));
-    expect(result.body.hits.total.value).toEqual(1);
+    //console.log('result', JSON.stringify(result, null, 2));
+    expect((result.hits.total as any).value).toEqual(1);
+    expect(result.hits.hits).toBeDefined();
 
-    expect(result.body.hits.hits[0]._source.type).toEqual('duplicated');
-    expect(result.body.hits.hits[0]._source.id).toEqual('1');
-    expect(result.body.hits.hits[0]._source.random_val).toEqual(second_value);
+    let source = result.hits.hits[0]._source as any;
+
+    expect(source.type).toEqual('duplicated');
+    expect(source.id).toEqual('1');
+    expect(source.random_val).toEqual(second_value);
   });
 });

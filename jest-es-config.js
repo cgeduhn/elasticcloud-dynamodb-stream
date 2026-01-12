@@ -3,10 +3,10 @@ const mapping = require('./es-mappings/mapping.json');
 module.exports = () => {
   console.log('ES will be called', { mapping });
   return {
-    esVersion: '7.17.0', // ! must be exact version. Ref: https://github.com/elastic/elasticsearch-js .
+    esVersion: '8.4.0', // ! must be exact version. Ref: https://github.com/elastic/elasticsearch-js .
     // don't be shy to fork our code and update deps to correct.
-    clusterName: 'your-cluster-name',
-    nodeName: 'your-node-name',
+    clusterName: 'your-cluster-name-2',
+    nodeName: 'your-node-name-3',
     port: 9200,
     indexes: [
       {
